@@ -56,7 +56,11 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
       ..delta = Offset.zero
       ..totalScale = 1.0
       ..preTotalScale = 1.0
-      ..cropRectPadding = _editorConfig!.cropRectPadding;
+      ..cropRectPadding = _editorConfig!.cropRectPadding
+      ..initialCropRect = _editorConfig!.initialCropRect
+      ..initialRotateAngle = _editorConfig!.initialRotateAngle
+      ..initialFlipX = _editorConfig!.initialFlipX
+      ..initialFlipY = _editorConfig!.initialFlipY;
 
     if (widget.extendedImageState.extendedImageInfo?.image != null) {
       _editActionDetails!.originalAspectRatio =
@@ -82,6 +86,7 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
   Widget build(BuildContext context) {
     assert(_editActionDetails != null && _editorConfig != null);
     final ExtendedImage extendedImage = widget.extendedImageState.imageWidget;
+
     final Widget image = ExtendedRawImage(
       image: widget.extendedImageState.extendedImageInfo?.image,
       width: extendedImage.width,
@@ -114,8 +119,8 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
                 Rect layoutRect = Offset.zero &
                     Size(constraints.maxWidth, constraints.maxHeight);
                 final EdgeInsets padding = _editorConfig!.cropRectPadding;
-
                 layoutRect = padding.deflateRect(layoutRect);
+                editAction!.layoutRectOther = layoutRect;
 
                 if (_editActionDetails!.cropRect == null) {
                   final Rect destinationRect = getDestinationRect(
@@ -151,8 +156,30 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
                     cropRect = rect;
                   }
                   _editActionDetails!.cropRect = cropRect;
-                }
+                  if (_editActionDetails!.initialCropRect != null) {
+                    var savedRect = _editActionDetails!.initialCropRect!;
+                    var imageWidth = widget.extendedImageState.extendedImageInfo!.image.width;
+                    var imageHeight = widget.extendedImageState.extendedImageInfo!.image.height;
+                    var topSame = cropRect.top == destinationRect.top;
+                    var scale = (topSame ? imageHeight : imageWidth) / (topSame ? savedRect.height : savedRect.width);
+                    var ratio = scale * (topSame ? (cropRect.height / imageHeight) : (cropRect.width / imageWidth));
+                    var x = imageWidth / 2 * ratio - cropRect.width / 2;
+                    var xOffset = x - savedRect.left * ratio;
+                    var y = imageHeight / 2 * ratio - cropRect.height / 2;
+                    var yOffset = y - savedRect.top * ratio;
 
+                    WidgetsBinding.instance!.addPostFrameCallback((_) {
+                      setState(() {
+                        _editActionDetails!.totalScale = scale;
+                        _editActionDetails!.delta = Offset(xOffset, yOffset);
+                      });
+                      WidgetsBinding.instance!.addPostFrameCallback((_) {
+                        // not sure why this is needed but it fixes a bug where the crop rect doesn't get updated
+                        setState(() {});
+                      });
+                    });
+                  }
+                }
                 return ExtendedImageCropLayer(
                   _editActionDetails!,
                   _editorConfig!,
@@ -182,7 +209,7 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
   }
 
   Rect _initCropRect(Rect rect) {
-    Rect cropRect = _editActionDetails!.getRectWithScale(rect);
+    Rect cropRect = _editActionDetails!.getRectWithScale(rect, 1.0);
 
     if (_editActionDetails!.cropAspectRatio != null) {
       final double aspectRatio = _editActionDetails!.cropAspectRatio!;

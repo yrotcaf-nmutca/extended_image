@@ -24,6 +24,11 @@ class EditActionDetails {
   Offset? screenFocalPoint;
   EdgeInsets? cropRectPadding;
   Rect? cropRect;
+  Rect? initialCropRect;
+  double? initialRotateAngle;
+  bool? initialFlipX;
+  bool? initialFlipY;
+  Rect? layoutRectOther;
 
   /// aspect ratio of image
   double? originalAspectRatio;
@@ -123,11 +128,19 @@ class EditActionDetails {
     preTotalScale = totalScale;
   }
 
+  void flipModifyScreenDestinationRect() {
+    final Offset flipOrigin = screenCropRect!.center;
+    _screenDestinationRect = Rect.fromLTRB(
+        2 * flipOrigin.dx - screenDestinationRect!.right,
+        screenDestinationRect!.top,
+        2 * flipOrigin.dx - screenDestinationRect!.left,
+        screenDestinationRect!.bottom);
+  }
+
   void flip() {
     if (screenCropRect == null) {
       return;
     }
-    final Offset flipOrigin = screenCropRect!.center;
     if (isHalfPi) {
       _flipX = !_flipX;
       // _screenDestinationRect = Rect.fromLTRB(
@@ -138,12 +151,7 @@ class EditActionDetails {
     } else {
       _flipY = !_flipY;
     }
-    _screenDestinationRect = Rect.fromLTRB(
-        2 * flipOrigin.dx - screenDestinationRect!.right,
-        screenDestinationRect!.top,
-        2 * flipOrigin.dx - screenDestinationRect!.left,
-        screenDestinationRect!.bottom);
-
+    flipModifyScreenDestinationRect();
     if (_flipX && _flipY && isPi) {
       _flipX = _flipY = false;
       _rotateRadian = 0.0;
@@ -241,31 +249,27 @@ class EditActionDetails {
             _screenDestinationRect!.width * scaleDelta,
             _screenDestinationRect!.height * scaleDelta);
         preTotalScale = totalScale;
-        delta = Offset.zero;
       }
 
       /// move
-      else {
-        if (_screenDestinationRect != screenCropRect) {
-          final bool topSame =
-              doubleEqual(_screenDestinationRect!.top, screenCropRect!.top);
-          final bool leftSame =
-              doubleEqual(_screenDestinationRect!.left, screenCropRect!.left);
-          final bool bottomSame = doubleEqual(
-              _screenDestinationRect!.bottom, screenCropRect!.bottom);
-          final bool rightSame =
-              doubleEqual(_screenDestinationRect!.right, screenCropRect!.right);
-          if (topSame && bottomSame) {
-            delta = Offset(delta.dx, 0.0);
-          } else if (leftSame && rightSame) {
-            delta = Offset(0.0, delta.dy);
-          }
-
-          _screenDestinationRect = _screenDestinationRect!.shift(delta);
+      if (_screenDestinationRect != screenCropRect) {
+        final bool topSame =
+            doubleEqual(_screenDestinationRect!.top, screenCropRect!.top);
+        final bool leftSame =
+            doubleEqual(_screenDestinationRect!.left, screenCropRect!.left);
+        final bool bottomSame = doubleEqual(
+            _screenDestinationRect!.bottom, screenCropRect!.bottom);
+        final bool rightSame =
+            doubleEqual(_screenDestinationRect!.right, screenCropRect!.right);
+        if (topSame && bottomSame) {
+          delta = Offset(delta.dx, 0.0);
+        } else if (leftSame && rightSame) {
+          delta = Offset(0.0, delta.dy);
         }
-        //we have shift offset, we should clear delta.
-        delta = Offset.zero;
+        _screenDestinationRect = _screenDestinationRect!.shift(delta);
       }
+
+      delta = Offset.zero;
 
       _screenDestinationRect =
           computeBoundary(_screenDestinationRect!, screenCropRect!);
@@ -305,17 +309,41 @@ class EditActionDetails {
           _screenDestinationRect = rect;
         }
       }
+
+      if (initialFlipY == true) {
+        _flipY = true;
+        initialFlipY = false;
+        flipModifyScreenDestinationRect();
+      }
+      if (initialFlipX == true && (initialRotateAngle == null || initialRotateAngle == 180)) {
+        // flipping x when rotating by 0 or 180 is a special case
+        initialFlipX = false;
+        _flipX = true;
+        rotate(90 * pi / 180, layoutRectOther!, BoxFit.contain);
+        flipModifyScreenDestinationRect();
+        rotate((initialRotateAngle == 180 ? 90 : 270) * pi / 180, layoutRectOther!, BoxFit.contain);
+        initialRotateAngle = null;
+      }
+      if (initialRotateAngle != null) {
+        rotate(initialRotateAngle! * pi / 180, layoutRectOther!, BoxFit.contain);
+        initialRotateAngle = null;
+      }
+      if (initialFlipX == true) {
+        _flipX = true;
+        initialFlipX = false;
+        flipModifyScreenDestinationRect();
+      }
     } else {
-      _screenDestinationRect = getRectWithScale(_rawDestinationRect!);
+      _screenDestinationRect = getRectWithScale(_rawDestinationRect!, totalScale);
       _screenDestinationRect =
           computeBoundary(_screenDestinationRect!, screenCropRect!);
     }
     return _screenDestinationRect!;
   }
 
-  Rect getRectWithScale(Rect rect) {
-    final double width = rect.width * totalScale;
-    final double height = rect.height * totalScale;
+  Rect getRectWithScale(Rect rect, double scale) {
+    final double width = rect.width * scale;
+    final double height = rect.height * scale;
     final Offset center = rect.center;
     return Rect.fromLTWH(
         center.dx - width / 2.0, center.dy - height / 2.0, width, height);
@@ -378,6 +406,10 @@ class EditorConfig {
     this.speed = 1.0,
     this.hitTestBehavior = HitTestBehavior.deferToChild,
     this.editActionDetailsIsChanged,
+    this.initialRotateAngle,
+    this.initialFlipX,
+    this.initialFlipY,
+    this.initialCropRect,
   })  : assert(lineHeight > 0.0),
         assert(hitTestSize > 0.0),
         assert(maxScale > 0.0),
@@ -435,6 +467,18 @@ class EditorConfig {
 
   /// Speed for zoom/pan
   final double speed;
+
+  /// initial crop rect
+  final Rect? initialCropRect;
+
+  /// initial rotation angle
+  final double? initialRotateAngle;
+
+  /// initial flip X
+  final bool? initialFlipX;
+
+  /// initial flip Y
+  final bool? initialFlipY;
 }
 
 class CropAspectRatios {
