@@ -24,6 +24,11 @@ class EditActionDetails {
   Offset? screenFocalPoint;
   EdgeInsets? cropRectPadding;
   Rect? cropRect;
+  Rect? initialCropRect;
+  double? initialRotateAngle;
+  bool? initialFlipX;
+  bool? initialFlipY;
+  Rect? layoutRectOther;
 
   /// aspect ratio of image
   double? originalAspectRatio;
@@ -305,6 +310,30 @@ class EditActionDetails {
           _screenDestinationRect = rect;
         }
       }
+
+      if (initialFlipY == true) {
+        _flipY = true;
+        initialFlipY = false;
+        flipModifyScreenDestinationRect();
+      }
+      if (initialFlipX == true && (initialRotateAngle == null || initialRotateAngle == 180)) {
+        // flipping x when rotating by 0 or 180 is a special case
+        initialFlipX = false;
+        _flipX = true;
+        rotate(90 * pi / 180, layoutRectOther!, BoxFit.contain);
+        flipModifyScreenDestinationRect();
+        rotate((initialRotateAngle == 180 ? 90 : 270) * pi / 180, layoutRectOther!, BoxFit.contain);
+        initialRotateAngle = null;
+      }
+      if (initialRotateAngle != null) {
+        rotate(initialRotateAngle! * pi / 180, layoutRectOther!, BoxFit.contain);
+        initialRotateAngle = null;
+      }
+      if (initialFlipX == true) {
+        _flipX = true;
+        initialFlipX = false;
+        flipModifyScreenDestinationRect();
+      }
     } else {
       _screenDestinationRect = getRectWithScale(_rawDestinationRect!);
       _screenDestinationRect =
@@ -378,6 +407,10 @@ class EditorConfig {
     this.speed = 1.0,
     this.hitTestBehavior = HitTestBehavior.deferToChild,
     this.editActionDetailsIsChanged,
+    this.initialRotateAngle,
+    this.initialFlipX,
+    this.initialFlipY,
+    this.initialCropRect,
     this.reverseMousePointerScrollDirection = false,
   })  : assert(lineHeight > 0.0),
         assert(hitTestSize > 0.0),
@@ -436,6 +469,18 @@ class EditorConfig {
 
   /// Speed for zoom/pan
   final double speed;
+
+  /// initial crop rect
+  final Rect? initialCropRect;
+
+  /// initial rotation angle
+  final double? initialRotateAngle;
+
+  /// initial flip X
+  final bool? initialFlipX;
+
+  /// initial flip Y
+  final bool? initialFlipY;
 
   /// reverse mouse pointer scroll deirection
   /// false: zoom int => down, zoom out => up
