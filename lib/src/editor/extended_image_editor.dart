@@ -160,7 +160,7 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
                     var savedRect = _editActionDetails!.initialCropRect!;
                     var imageWidth = widget.extendedImageState.extendedImageInfo!.image.width;
                     var imageHeight = widget.extendedImageState.extendedImageInfo!.image.height;
-                    var topSame = cropRect.top == destinationRect.top;
+                    var topSame = cropRect.top.toInt() == destinationRect.top.toInt();
                     var scale = (topSame ? imageHeight : imageWidth) / (topSame ? savedRect.height : savedRect.width);
                     var ratio = scale * (topSame ? (cropRect.height / imageHeight) : (cropRect.width / imageWidth));
                     var x = imageWidth / 2 * ratio - cropRect.width / 2;
