@@ -1,3 +1,54 @@
+## 6.0.1
+
+* Issues:
+  Fix VelocityTracker is not type ExtendedVelocityTracker
+
+## 6.0.0
+
+* Breaking change:
+  Migrate to 2.8
+
+## 5.1.3
+
+* Issues:
+  1. fix issue that solve gesture conflict between MovePage and vertical pan.
+
+## 5.1.2
+
+* Issues:
+  1. fix issue that mouse wheel/double tap are not working.(#404)
+
+## 5.1.1
+
+* Bumping flutter sdk minimum version to 2.5.0
+## 5.1.0
+
+* Improve:
+  add [ExtendedPageController.shouldIgnorePointerWhenScrolling] to solve issue that we can's zoom image before [PageView] stop scroll in two way.  
+
+## 5.0.0
+
+* Improve:
+  1. solve gesture conflict between Scale and Horizontal/Vertical drag.
+  2. support to set page spacing. [ExtendedPageController.pageSpacing]
+  3. add [ExtendedImage.opacity].
+  4. fix that we can't zoom image before [PageView] stop scroll.
+
+* Breaking change:
+  1. use [ExtendedPageController] instead of [PageController].
+  2. use [ExtendedImageGesturePageView.canScrollPage] instead of [ExtendedImageGesturePageView.canMovePage].
+
+## 4.2.1
+
+* Improve:
+  1. fix description of reverseMousePointerScrollDirection
+
+## 4.2.0
+
+* Issues:
+  1. fix issue that inverse zoom by mouse wheel.(#382)
+  2. fix issue that crop_layer with/height is negative
+
 ## 4.1.0
 
 * Improve:

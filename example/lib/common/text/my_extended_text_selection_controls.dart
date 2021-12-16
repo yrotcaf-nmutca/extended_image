@@ -39,7 +39,8 @@ class MyTextSelectionControls extends TextSelectionControls {
       endpoints: endpoints,
       delegate: delegate,
       clipboardStatus: clipboardStatus,
-      handleCut: canCut(delegate) ? () => handleCut(delegate) : null,
+      handleCut:
+          canCut(delegate) ? () => handleCut(delegate, clipboardStatus) : null,
       handleCopy: canCopy(delegate)
           ? () => handleCopy(delegate, clipboardStatus)
           : null,
@@ -50,8 +51,11 @@ class MyTextSelectionControls extends TextSelectionControls {
         launch(
             'mailto:zmtzawqlp@live.com?subject=extended_text_share&body=${delegate.textEditingValue.text}');
         delegate.hideToolbar();
-        delegate.textEditingValue = delegate.textEditingValue
-            .copyWith(selection: const TextSelection.collapsed(offset: 0));
+        delegate.userUpdateTextEditingValue(
+          delegate.textEditingValue
+              .copyWith(selection: const TextSelection.collapsed(offset: 0)),
+          SelectionChangedCause.toolbar,
+        );
       },
     );
   }
@@ -59,7 +63,8 @@ class MyTextSelectionControls extends TextSelectionControls {
   /// Builder for material-style text selection handles.
   @override
   Widget buildHandle(
-      BuildContext context, TextSelectionHandleType type, double textHeight) {
+      BuildContext context, TextSelectionHandleType type, double textHeight,
+      [VoidCallback? onTap, double? startGlyphHeight, double? endGlyphHeight]) {
     final Widget handle = SizedBox(
       width: _kHandleSize,
       height: _kHandleSize,
@@ -91,7 +96,8 @@ class MyTextSelectionControls extends TextSelectionControls {
   ///
   /// See [TextSelectionControls.getHandleAnchor].
   @override
-  Offset getHandleAnchor(TextSelectionHandleType type, double textLineHeight) {
+  Offset getHandleAnchor(TextSelectionHandleType type, double textLineHeight,
+      [double? startGlyphHeight, double? endGlyphHeight]) {
     switch (type) {
       case TextSelectionHandleType.left:
         return const Offset(_kHandleSize, 0);
