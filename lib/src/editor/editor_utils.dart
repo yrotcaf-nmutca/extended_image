@@ -128,11 +128,19 @@ class EditActionDetails {
     preTotalScale = totalScale;
   }
 
+  void flipModifyScreenDestinationRect() {
+    final Offset flipOrigin = screenCropRect!.center;
+    _screenDestinationRect = Rect.fromLTRB(
+        2 * flipOrigin.dx - screenDestinationRect!.right,
+        screenDestinationRect!.top,
+        2 * flipOrigin.dx - screenDestinationRect!.left,
+        screenDestinationRect!.bottom);
+  }
+
   void flip() {
     if (screenCropRect == null) {
       return;
     }
-    final Offset flipOrigin = screenCropRect!.center;
     if (isHalfPi) {
       _flipX = !_flipX;
       // _screenDestinationRect = Rect.fromLTRB(
@@ -143,11 +151,7 @@ class EditActionDetails {
     } else {
       _flipY = !_flipY;
     }
-    _screenDestinationRect = Rect.fromLTRB(
-        2 * flipOrigin.dx - screenDestinationRect!.right,
-        screenDestinationRect!.top,
-        2 * flipOrigin.dx - screenDestinationRect!.left,
-        screenDestinationRect!.bottom);
+    flipModifyScreenDestinationRect();
 
     if (_flipX && _flipY && isPi) {
       _flipX = _flipY = false;
